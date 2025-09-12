@@ -253,6 +253,23 @@ func (c *RekordboxClient) Generate(collection interfaces.Collection) {
 
 		}
 		if !hasCompatibleTrack {
+			for _, track := range crate.Filter(func(i interfaces.Item) bool {
+				return !playlist.Contains(i)
+			}).SortWith(func(a, b interfaces.Item) bool {
+				return a.GetScale().IsCompatible(lastTrack.GetScale())
+			}).Items() {
+				if lastTrack.BpmMatchesTarget(track.GetBPM()) {
+					//fmt.Fprintln(os.Stderr, "Bpm match result:", lastTrack.BpmMatchesTarget(track.GetBPM()))
+					//fmt.Fprintln(os.Stderr, "BPM jump from", lastTrack.GetBPM(), "to", track.GetBPM())
+					//fmt.Fprintln(os.Stderr, "Adding random track:", track)
+					playlist.Add(track)
+					break
+				} else if retries <= 5 {
+					//fmt.Fprintln(os.Stderr, "Adding random track (ignoring BPM):", track)
+					playlist.Add(track)
+					break
+				}
+			}
 			retries -= 1
 			// break
 		}

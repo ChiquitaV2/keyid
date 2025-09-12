@@ -1,9 +1,10 @@
 package models
 
 import (
-	"fmt"
+	"log"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/xdave/keyid/interfaces"
 )
@@ -42,9 +43,16 @@ func IsCamelotKey(key string) bool {
 
 func ParseCamelotKey(key string) *CamelotScale {
 	camelotKey := &CamelotScale{}
+	//Make sure key is uppercased
 
-	if !IsCamelotKey(key) {
-		panic(fmt.Errorf("%v is not a camelot key", key))
+	if !IsCamelotKey(strings.ToUpper(key)) {
+		// convert keys to camelot
+		if scale, ok := PitchToCamelot[key]; ok {
+			key = scale
+		} else {
+			log.Default().Printf("%s is not a valid camelot key", key)
+			return &CamelotScale{Index: 0, Kind: interfaces.Major}
+		}
 	}
 
 	r := regexp.MustCompile(`(?P<Number>\d{1,2})(?P<Letter>[AB]{1})`)
