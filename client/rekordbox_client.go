@@ -236,10 +236,13 @@ func (c *RekordboxClient) Generate(collection interfaces.Collection) {
 			compatible.RandomShuffle()
 		}
 
-		if compatible.IsEmpty() || playlist.Len() == crate.Len() {
+		if playlist.Len() == crate.Len() {
 			break
 		}
 		hasCompatibleTrack := false
+		if compatible.IsEmpty() {
+			hasCompatibleTrack = false
+		}
 		for _, track := range compatible.Items() {
 			if playlist.Contains(track) {
 				continue
@@ -260,12 +263,12 @@ func (c *RekordboxClient) Generate(collection interfaces.Collection) {
 			}).Items() {
 				if lastTrack.BpmMatchesTarget(track.GetBPM()) {
 					//fmt.Fprintln(os.Stderr, "Bpm match result:", lastTrack.BpmMatchesTarget(track.GetBPM()))
-					//fmt.Fprintln(os.Stderr, "BPM jump from", lastTrack.GetBPM(), "to", track.GetBPM())
-					//fmt.Fprintln(os.Stderr, "Adding random track:", track)
+					fmt.Fprintln(os.Stderr, "BPM jump from", lastTrack.GetBPM(), "to", track.GetBPM())
+					fmt.Fprintln(os.Stderr, "Adding random track:", track)
 					playlist.Add(track)
 					break
 				} else if retries <= 5 {
-					//fmt.Fprintln(os.Stderr, "Adding random track (ignoring BPM):", track)
+					fmt.Fprintln(os.Stderr, "Adding random track (ignoring BPM):", track)
 					playlist.Add(track)
 					break
 				}
