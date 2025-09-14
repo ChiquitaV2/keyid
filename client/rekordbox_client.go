@@ -101,6 +101,32 @@ func (c *RekordboxClient) LoadPlaylist(name string) interfaces.Collection {
 	})
 }
 
+func (c *RekordboxClient) GetPlaylists() []*interfaces.PlaylistNode {
+	playlists, _ := c.client.AllDjmdPlaylist(context.Background())
+	playlistMap := make(map[string]*interfaces.PlaylistNode)
+	for _, playlist := range playlists {
+		playlistMap[playlist.ID.StringValue()] = &interfaces.PlaylistNode{
+			ID:       playlist.ID.StringValue(),
+			Name:     playlist.Name.StringValue(),
+			Children: []*interfaces.PlaylistNode{},
+		}
+	}
+
+	var roots []*interfaces.PlaylistNode
+	for _, playlist := range playlists {
+		if playlist.ParentID.StringValue() == "" || playlist.ParentID.StringValue() == "root" {
+			roots = append(roots, playlistMap[playlist.ID.StringValue()])
+		} else {
+			parent, ok := playlistMap[playlist.ParentID.StringValue()]
+			if ok {
+				parent.Children = append(parent.Children, playlistMap[playlist.ID.StringValue()])
+			}
+		}
+	}
+
+	return roots
+}
+
 func (c *RekordboxClient) GetTrackByTitle(pattern string, from interfaces.Collection) interfaces.Item {
 	for _, track := range from.Items() {
 		if strings.Contains(strings.ToLower(track.GetTitle()), strings.ToLower(pattern)) {
@@ -193,23 +219,17 @@ func (c *RekordboxClient) Run() {
 	}
 }
 
-func (c *RekordboxClient) Suggest(collection interfaces.Collection) {
+func (c *RekordboxClient) Suggest(collection interfaces.Collection) interfaces.Collection {
 	track := c.GetNowPlaying(collection)
 
 	if track == nil {
-		c.shutdowner.Shutdown(fx.ExitCode(1))
-		return
+		return models.NewInMemoryCollection()
 	}
 
-	fmt.Println(track)
-	compat := c.GetCompatibleTracks(track, collection)
-	compat.ForEach(func(item interfaces.Item) {
-		fmt.Println(" ->", item)
-	})
-	c.shutdowner.Shutdown(fx.ExitCode(0))
+	return c.GetCompatibleTracks(track, collection)
 }
 
-func (c *RekordboxClient) Generate(collection interfaces.Collection) {
+func (c *RekordboxClient) Generate(collection interfaces.Collection) interfaces.Collection {
 	crate := models.NewInMemoryCollection(collection.Items()...)
 
 	if c.args.Random {
@@ -219,8 +239,7 @@ func (c *RekordboxClient) Generate(collection interfaces.Collection) {
 	startWith := c.GetTrackByTitle(c.args.StartWith, crate)
 
 	if startWith == nil {
-		c.shutdowner.Shutdown(fx.ExitCode(1))
-		return
+		return models.NewInMemoryCollection()
 	}
 
 	playlist := models.NewInMemoryCollection(startWith)
@@ -278,15 +297,7 @@ func (c *RekordboxClient) Generate(collection interfaces.Collection) {
 		}
 	}
 
-	c.printer.PrintHeader()
-
-	playlist.ForEach(c.printer.Print)
-
-	c.shutdowner.Shutdown(fx.ExitCode(0))
-
-	if playlist.Len() != crate.Len() {
-		fmt.Fprintln(os.Stderr, "WARNING: expecting", crate.Len(), "tracks, got", playlist.Len())
-	}
+	return playlist
 }
 
 func (c *RekordboxClient) Close() {

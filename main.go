@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/xdave/keyid/app"
 	"github.com/xdave/keyid/args"
-	"github.com/xdave/keyid/interfaces"
+	"github.com/xdave/keyid/gui"
 	"github.com/xdave/keyid/logger"
 	"github.com/xdave/keyid/printer"
 
@@ -16,6 +16,6 @@ func main() {
 		args.Module,
 		printer.Module,
 		app.Module,
-		fx.Invoke(interfaces.Client.Run),
+		gui.Module,
 	).Run()
 }
