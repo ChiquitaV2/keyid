@@ -8,6 +8,13 @@ Uses the Camelot system to either:
 
 This assumes you have analyzed your collection using the Alphanumeric key notation.
 
+
+<details>
+    <summary>Screenshot</summary>
+    <img src="gui.png" alt="keyid GUI Screenshot"></img>
+</details>
+
+
 # Why
 
 - Q: Rekordbox already has a "Traffic Light" system that can suggest tracks to play that are in key, why do this?
